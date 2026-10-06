@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f7f6f2">
     <title>漲停小貓產生器</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
   </head>
   <body>
     <header><h1 class="brand">漲停小貓產生器</h1></header>
@@ -28,17 +28,7 @@
             <section class="panel controls">
               <div class="step">01 <h2>背景圖片</h2>
               </div><label class="upload" for="background"><b>＋</b><strong>上傳背景圖片</strong><span>JPG、PNG、WebP · 點擊選取</span><input id="background" type="file" accept="image/jpeg,image/png,image/webp"></label>
-              <p id="filename" class="hint">背景配色</p>
-              <div class="swatches"><button data-bg="mint" class="swatch mint active" aria-label="薄荷背景"></button><button data-bg="peach" class="swatch peach" aria-label="蜜桃背景"></button><button data-bg="night" class="swatch night" aria-label="深夜背景"></button><button data-bg="cream" class="swatch cream" aria-label="奶油背景"></button></div>
-              <div class="row"><label for="ratio">畫布比例</label><select id="ratio">
-                  <option value="portrait">9:16 直式</option>
-                  <option value="square">1:1 方形</option>
-                  <option value="landscape">16:9 橫式</option>
-                </select></div>
-              <div class="row"><label for="fit">背景填滿方式</label><select id="fit">
-                  <option value="cover">裁切填滿</option>
-                  <option value="contain">完整顯示</option>
-                </select></div>
+              <p id="filename" class="hint"></p>
             </section>
             <section class="panel controls">
               <div class="step">02 <h2>小貓位置與大小</h2><button id="reset" class="text-button">重設</button></div><label class="slider-label" for="size">整組大小 <output id="sizeValue">85%</output></label><input id="size" type="range" min="20" max="150" value="85"><label class="slider-label" for="posX">水平位置 <output id="xValue">50%</output></label><input id="posX" type="range" min="0" max="100" value="50"><label class="slider-label" for="posY">垂直位置 <output id="yValue">60%</output></label><input id="posY" type="range" min="0" max="100" value="60">
@@ -66,6 +56,6 @@
         </aside>
       </div>
     </main><video id="source" src="assets/cats.mp4" preload="auto" playsinline webkit-playsinline muted loop aria-hidden="true"></video>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>

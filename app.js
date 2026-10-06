@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id), canvas=$('canvas'),ctx=canvas.getContex
 const layer=document.createElement('canvas');layer.width=648;layer.height=600;
 const lc=layer.getContext('2d',{willReadFrequently:true});
 let posterReady=false;
+let imageAspect=720/1280;
 let bg=null,palette='mint',ready=false,busy=false,drag=null,recorder=null,stream=null,audioCtx=null,audioDest=null,audioSource=null,audioGain=null,resultURL=null,resultBlob=null,cancelled=false,recordError=null,wakeLock=null;
 const state={x:.5,y:.6,size:.85}, palettes={mint:['#dce9d5','#a8c7ac'],peach:['#fff1df','#e9b3a3'],night:['#50667c','#142e37'],cream:['#fff8e5','#dfc98d']};
 const types=['video/mp4;codecs=avc1.424028,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'];
@@ -12,9 +13,17 @@ $('format').textContent=mime?(mime.includes('mp4')?'MP4':'WebM'):'此瀏覽器�
 const status=message=>$('status').textContent=message;
 function bounds(){const w=canvas.width*state.size,h=w*600/648;return {x:canvas.width*state.x-w/2,y:canvas.height*state.y-h/2,w,h};}
 function sync(){for(const [id,value]of [['size',state.size*100],['posX',state.x*100],['posY',state.y*100]])$(id).value=Math.round(value);$('sizeValue').value=Math.round(state.size*100)+'%';$('xValue').value=Math.round(state.x*100)+'%';$('yValue').value=Math.round(state.y*100)+'%';}
-function resize(){const n=Number($('quality').value),r=$('ratio').value;canvas.width=r==='landscape'?Math.round(n*16/9/2)*2:n;canvas.height=r==='portrait'?Math.round(n*16/9/2)*2:n;const wrap=canvas.parentElement;wrap.style.aspectRatio=canvas.width+'/'+canvas.height;wrap.style.width='auto';wrap.style.maxHeight='100%';$('dimensions').textContent=canvas.width+' × '+canvas.height;}
+function resize(){
+  const shortEdge=Number($('quality').value),longLimit=Math.round(shortEdge*16/9);
+  const scale=Math.min(shortEdge/Math.min(imageAspect,1),longLimit/Math.max(imageAspect,1));
+  canvas.width=Math.max(2,Math.ceil(imageAspect*scale/2)*2);
+  canvas.height=Math.max(2,Math.ceil(scale/2)*2);
+  canvas.parentElement.style.aspectRatio=canvas.width+'/'+canvas.height;
+  $('dimensions').textContent=canvas.width+' × '+canvas.height;
+}
+
 function keyFrame(){if(video.readyState<2)return;lc.drawImage(video,0,0,648,600);const frame=lc.getImageData(0,0,648,600),d=frame.data,k=+$('key').value;for(let i=0;i<d.length;i+=4){const excess=d[i+1]-Math.max(d[i],d[i+2]);const alpha=1-Math.min(1,Math.max(0,(excess-k)/45));d[i+3]=Math.round(alpha*255);if(excess>12)d[i+1]=Math.min(d[i+1],Math.max(d[i],d[i+2])+12);}lc.putImageData(frame,0,0);}
-function draw(){const w=canvas.width,h=canvas.height;const colors=palettes[palette],gradient=ctx.createLinearGradient(0,0,w,h);gradient.addColorStop(0,colors[0]);gradient.addColorStop(1,colors[1]);ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);if(bg){const s=($('fit').value==='cover'?Math.max:Math.min)(w/bg.width,h/bg.height);ctx.drawImage(bg,(w-bg.width*s)/2,(h-bg.height*s)/2,bg.width*s,bg.height*s);}else{ctx.fillStyle=palette==='night'?'#ffffff0c':'#ffffff35';ctx.beginPath();ctx.arc(w*.88,h*.16,w*.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.1,h*.97,w*.8,h*.25,-.25,0,Math.PI*2);ctx.fill();}const b=bounds();ctx.save();if($('flip').checked){ctx.translate(b.x+b.w,b.y);ctx.scale(-1,1);ctx.drawImage(layer,0,0,b.w,b.h);}else ctx.drawImage(layer,b.x,b.y,b.w,b.h);ctx.restore();const sel=$('selection');sel.style.left=b.x/w*100+'%';sel.style.top=b.y/h*100+'%';sel.style.width=b.w/w*100+'%';sel.style.height=b.h/h*100+'%';sel.hidden=busy||(!ready&&!posterReady);const t=video.currentTime||0;$('time').textContent='00:'+String(Math.floor(t)).padStart(2,'0')+' / 00:12';if(busy)$('progress').value=t/video.duration;}
+function draw(){const w=canvas.width,h=canvas.height;const colors=palettes[palette],gradient=ctx.createLinearGradient(0,0,w,h);gradient.addColorStop(0,colors[0]);gradient.addColorStop(1,colors[1]);ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);if(bg){const s=Math.min(w/bg.width,h/bg.height);ctx.drawImage(bg,(w-bg.width*s)/2,(h-bg.height*s)/2,bg.width*s,bg.height*s);}else{ctx.fillStyle=palette==='night'?'#ffffff0c':'#ffffff35';ctx.beginPath();ctx.arc(w*.88,h*.16,w*.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.1,h*.97,w*.8,h*.25,-.25,0,Math.PI*2);ctx.fill();}const b=bounds();ctx.save();if($('flip').checked){ctx.translate(b.x+b.w,b.y);ctx.scale(-1,1);ctx.drawImage(layer,0,0,b.w,b.h);}else ctx.drawImage(layer,b.x,b.y,b.w,b.h);ctx.restore();const sel=$('selection');sel.style.left=b.x/w*100+'%';sel.style.top=b.y/h*100+'%';sel.style.width=b.w/w*100+'%';sel.style.height=b.h/h*100+'%';sel.hidden=busy||(!ready&&!posterReady);const t=video.currentTime||0;$('time').textContent='00:'+String(Math.floor(t)).padStart(2,'0')+' / 00:12';if(busy)$('progress').value=t/video.duration;}
 let previous=-1;function loop(){if(ready&&(video.currentTime!==previous)){keyFrame();previous=video.currentTime;}draw();requestAnimationFrame(loop);}resize();loop();
 function initializeVideo(){if(video.readyState<2)return;const first=!ready;ready=true;keyFrame();draw();$('play').disabled=false;$('export').disabled=!mime||!canvas.captureStream;if(first&&!bg)status('請上傳背景圖片。');}
 video.addEventListener('loadeddata',initializeVideo);
@@ -24,10 +33,9 @@ video.addEventListener('error',()=>status('小貓素材載入失敗。請透過�
 video.addEventListener('ended',()=>{if(busy){if(recorder?.state==='recording')recorder.stop();}else $('play').textContent='▶ 播放預覽';});
 $('play').onclick=async()=>{try{if(video.paused){if(video.ended)video.currentTime=0;video.loop=true;await video.play();$('play').textContent='Ⅱ 暫停預覽';}else{video.pause();$('play').textContent='▶ 播放預覽';}}catch{status('播放失敗，請再點一次播放。');}};
 for(const id of ['size','posX','posY'])$(id).oninput=()=>{state.size=+$('size').value/100;state.x=+$('posX').value/100;state.y=+$('posY').value/100;sync();};
-$('key').oninput=()=>{keyFrame();};$('ratio').onchange=resize;$('quality').onchange=resize;
+$('key').oninput=()=>{keyFrame();};$('quality').onchange=resize;
 $('reset').onclick=()=>{Object.assign(state,{x:.5,y:.6,size:.85});$('flip').checked=false;sync();};
-document.querySelectorAll('[data-bg]').forEach(button=>button.onclick=()=>{bg=null;palette=button.dataset.bg;$('background').value='';$('filename').textContent='背景配色';document.querySelectorAll('[data-bg]').forEach(b=>b.classList.toggle('active',b===button));});
-$('background').onchange=async event=>{const file=event.target.files[0];if(!file)return;if(file.size>30*1024*1024){status('圖片超過 30 MB，請選擇較小的圖片。');event.target.value='';return;}const url=URL.createObjectURL(file);try{const img=new Image();img.src=url;await img.decode();const s=Math.min(1,2560/Math.max(img.width,img.height));const temp=document.createElement('canvas');temp.width=Math.round(img.width*s);temp.height=Math.round(img.height*s);temp.getContext('2d').drawImage(img,0,0,temp.width,temp.height);bg=temp;$('filename').textContent=file.name;document.querySelectorAll('[data-bg]').forEach(b=>b.classList.remove('active'));initializeVideo();fitPreview();draw();
+$('background').onchange=async event=>{const file=event.target.files[0];if(!file)return;if(file.size>30*1024*1024){status('圖片超過 30 MB，請選擇較小的圖片。');event.target.value='';return;}const url=URL.createObjectURL(file);try{const img=new Image();img.src=url;await img.decode();const s=Math.min(1,2560/Math.max(img.width,img.height));const temp=document.createElement('canvas');temp.width=Math.round(img.width*s);temp.height=Math.round(img.height*s);temp.getContext('2d').drawImage(img,0,0,temp.width,temp.height);bg=temp;imageAspect=img.naturalWidth/img.naturalHeight;resize();$('filename').textContent=file.name;initializeVideo();fitPreview();draw();
 // Bring the updated composition into view on stacked/mobile layouts.
 document.querySelector('.preview').scrollIntoView({behavior:'smooth',block:'start'});
 video.muted=true;video.loop=true;
@@ -49,8 +57,7 @@ $('share').onclick=async()=>{if(!resultBlob)return;try{await navigator.share({fi
 // Fit every aspect ratio inside the preview, including narrow phones.
 function fitPreview(){const stage=document.querySelector('.stage'),wrap=canvas.parentElement;const availableW=stage.clientWidth-44,availableH=stage.clientHeight-44;const scale=Math.min(availableW/canvas.width,availableH/canvas.height);wrap.style.width=canvas.width*scale+'px';wrap.style.height=canvas.height*scale+'px';}
 new ResizeObserver(fitPreview).observe(document.querySelector('.stage'));
-$('ratio').addEventListener('change',fitPreview);$('quality').addEventListener('change',fitPreview);fitPreview();
-$('ratio').addEventListener('change',()=>{state.size=$('ratio').value==='landscape'?.48:.85;state.x=.5;state.y=$('ratio').value==='landscape'?.5:.6;sync();});
+$('quality').addEventListener('change',fitPreview);fitPreview();
 
 // A still frame is independent of mobile video preload/autoplay policies.
 const poster=new Image();
