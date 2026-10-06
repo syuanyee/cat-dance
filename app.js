@@ -3,6 +3,7 @@
 const $=id=>document.getElementById(id), canvas=$('canvas'),ctx=canvas.getContext('2d'),video=$('source');
 const layer=document.createElement('canvas');layer.width=648;layer.height=600;
 const lc=layer.getContext('2d',{willReadFrequently:true});
+let posterReady=false;
 let bg=null,palette='mint',ready=false,busy=false,drag=null,recorder=null,stream=null,audioCtx=null,audioDest=null,audioSource=null,audioGain=null,resultURL=null,resultBlob=null,cancelled=false,recordError=null,wakeLock=null;
 const state={x:.5,y:.6,size:.85}, palettes={mint:['#dce9d5','#a8c7ac'],peach:['#fff1df','#e9b3a3'],night:['#50667c','#142e37'],cream:['#fff8e5','#dfc98d']};
 const types=['video/mp4;codecs=avc1.424028,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'];
@@ -13,7 +14,7 @@ function bounds(){const w=canvas.width*state.size,h=w*600/648;return {x:canvas.w
 function sync(){for(const [id,value]of [['size',state.size*100],['posX',state.x*100],['posY',state.y*100]])$(id).value=Math.round(value);$('sizeValue').value=Math.round(state.size*100)+'%';$('xValue').value=Math.round(state.x*100)+'%';$('yValue').value=Math.round(state.y*100)+'%';}
 function resize(){const n=Number($('quality').value),r=$('ratio').value;canvas.width=r==='landscape'?Math.round(n*16/9/2)*2:n;canvas.height=r==='portrait'?Math.round(n*16/9/2)*2:n;const wrap=canvas.parentElement;wrap.style.aspectRatio=canvas.width+'/'+canvas.height;wrap.style.width='auto';wrap.style.maxHeight='100%';$('dimensions').textContent=canvas.width+' × '+canvas.height;}
 function keyFrame(){if(video.readyState<2)return;lc.drawImage(video,0,0,648,600);const frame=lc.getImageData(0,0,648,600),d=frame.data,k=+$('key').value;for(let i=0;i<d.length;i+=4){const excess=d[i+1]-Math.max(d[i],d[i+2]);const alpha=1-Math.min(1,Math.max(0,(excess-k)/45));d[i+3]=Math.round(alpha*255);if(excess>12)d[i+1]=Math.min(d[i+1],Math.max(d[i],d[i+2])+12);}lc.putImageData(frame,0,0);}
-function draw(){const w=canvas.width,h=canvas.height;const colors=palettes[palette],gradient=ctx.createLinearGradient(0,0,w,h);gradient.addColorStop(0,colors[0]);gradient.addColorStop(1,colors[1]);ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);if(bg){const s=($('fit').value==='cover'?Math.max:Math.min)(w/bg.width,h/bg.height);ctx.drawImage(bg,(w-bg.width*s)/2,(h-bg.height*s)/2,bg.width*s,bg.height*s);}else{ctx.fillStyle=palette==='night'?'#ffffff0c':'#ffffff35';ctx.beginPath();ctx.arc(w*.88,h*.16,w*.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.1,h*.97,w*.8,h*.25,-.25,0,Math.PI*2);ctx.fill();}const b=bounds();ctx.save();if($('flip').checked){ctx.translate(b.x+b.w,b.y);ctx.scale(-1,1);ctx.drawImage(layer,0,0,b.w,b.h);}else ctx.drawImage(layer,b.x,b.y,b.w,b.h);ctx.restore();const sel=$('selection');sel.style.left=b.x/w*100+'%';sel.style.top=b.y/h*100+'%';sel.style.width=b.w/w*100+'%';sel.style.height=b.h/h*100+'%';sel.hidden=busy||!ready;const t=video.currentTime||0;$('time').textContent='00:'+String(Math.floor(t)).padStart(2,'0')+' / 00:12';if(busy)$('progress').value=t/video.duration;}
+function draw(){const w=canvas.width,h=canvas.height;const colors=palettes[palette],gradient=ctx.createLinearGradient(0,0,w,h);gradient.addColorStop(0,colors[0]);gradient.addColorStop(1,colors[1]);ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);if(bg){const s=($('fit').value==='cover'?Math.max:Math.min)(w/bg.width,h/bg.height);ctx.drawImage(bg,(w-bg.width*s)/2,(h-bg.height*s)/2,bg.width*s,bg.height*s);}else{ctx.fillStyle=palette==='night'?'#ffffff0c':'#ffffff35';ctx.beginPath();ctx.arc(w*.88,h*.16,w*.5,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(w*.1,h*.97,w*.8,h*.25,-.25,0,Math.PI*2);ctx.fill();}const b=bounds();ctx.save();if($('flip').checked){ctx.translate(b.x+b.w,b.y);ctx.scale(-1,1);ctx.drawImage(layer,0,0,b.w,b.h);}else ctx.drawImage(layer,b.x,b.y,b.w,b.h);ctx.restore();const sel=$('selection');sel.style.left=b.x/w*100+'%';sel.style.top=b.y/h*100+'%';sel.style.width=b.w/w*100+'%';sel.style.height=b.h/h*100+'%';sel.hidden=busy||(!ready&&!posterReady);const t=video.currentTime||0;$('time').textContent='00:'+String(Math.floor(t)).padStart(2,'0')+' / 00:12';if(busy)$('progress').value=t/video.duration;}
 let previous=-1;function loop(){if(ready&&(video.currentTime!==previous)){keyFrame();previous=video.currentTime;}draw();requestAnimationFrame(loop);}resize();loop();
 function initializeVideo(){if(video.readyState<2)return;const first=!ready;ready=true;keyFrame();draw();$('play').disabled=false;$('export').disabled=!mime||!canvas.captureStream;if(first&&!bg)status('請上傳背景圖片。');}
 video.addEventListener('loadeddata',initializeVideo);
@@ -34,7 +35,7 @@ try{await video.play();$('play').textContent='Ⅱ 暫停預覽';status('背景�
 catch{status('背景已更新。點擊「播放預覽」讓小貓跳舞。');}
 }catch{status('無法讀取這張圖片，請使用 JPG、PNG 或 WebP。');}finally{URL.revokeObjectURL(url);}};
 function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*canvas.width,y:(e.clientY-r.top)/r.height*canvas.height};}
-canvas.onpointerdown=e=>{if(busy||!ready||drag)return;const p=point(e),b=bounds(),tolerance=25*canvas.width/canvas.clientWidth;const corner=Math.hypot(p.x-b.x-b.w,p.y-b.y-b.h)<tolerance;if(corner||(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h)){drag={id:e.pointerId,p,x:state.x,y:state.y,size:state.size,corner};canvas.setPointerCapture(e.pointerId);}};
+canvas.onpointerdown=e=>{if(busy||(!ready&&!posterReady)||drag)return;const p=point(e),b=bounds(),tolerance=25*canvas.width/canvas.clientWidth;const corner=Math.hypot(p.x-b.x-b.w,p.y-b.y-b.h)<tolerance;if(corner||(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h)){drag={id:e.pointerId,p,x:state.x,y:state.y,size:state.size,corner};canvas.setPointerCapture(e.pointerId);}};
 canvas.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;const p=point(e);if(drag.corner)state.size=Math.max(.2,Math.min(1.5,drag.size+2*(p.x-drag.p.x)/canvas.width));else{state.x=Math.max(0,Math.min(1,drag.x+(p.x-drag.p.x)/canvas.width));state.y=Math.max(0,Math.min(1,drag.y+(p.y-drag.p.y)/canvas.height));}sync();};
 canvas.onpointerup=canvas.onpointercancel=()=>drag=null;
 async function audio(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioSource=audioCtx.createMediaElementSource(video);audioGain=audioCtx.createGain();audioDest=audioCtx.createMediaStreamDestination();audioSource.connect(audioGain);audioGain.connect(audioDest);}await audioCtx.resume();audioGain.gain.value=$('sound').checked?1:0;video.muted=false;}
@@ -50,3 +51,21 @@ function fitPreview(){const stage=document.querySelector('.stage'),wrap=canvas.p
 new ResizeObserver(fitPreview).observe(document.querySelector('.stage'));
 $('ratio').addEventListener('change',fitPreview);$('quality').addEventListener('change',fitPreview);fitPreview();
 $('ratio').addEventListener('change',()=>{state.size=$('ratio').value==='landscape'?.48:.85;state.x=.5;state.y=$('ratio').value==='landscape'?.5:.6;sync();});
+
+// A still frame is independent of mobile video preload/autoplay policies.
+const poster=new Image();
+poster.onload=()=>{
+  posterReady=true;
+  if(!ready){lc.clearRect(0,0,648,600);lc.drawImage(poster,0,0,648,600);draw();status('點擊播放預覽，或上傳背景圖片。');}
+};
+poster.onerror=()=>{if(!ready)status('點擊播放預覽載入小貓。');};
+poster.src='assets/cats-poster.png';
+// Keep manual playback available even when the browser refuses to preload.
+$('play').disabled=false;
+video.muted=true;
+video.defaultMuted=true;
+video.loop=true;
+video.addEventListener('playing',()=>{initializeVideo();$('play').textContent='Ⅱ 暫停預覽';});
+video.addEventListener('pause',()=>{$('play').textContent='▶ 播放預覽';});
+video.load();
+video.play().catch(()=>{/* The poster remains visible; the play button retries with a user gesture. */});
