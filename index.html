@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#f7f6f2">
+    <title>漲停小貓產生器</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header><h1 class="brand">漲停小貓產生器</h1></header>
+    <main>
+      <div class="workspace">
+        <section class="preview panel">
+          <div class="panel-heading">
+            <h2>影片預覽</h2><span id="dimensions">720 × 1280</span>
+          </div>
+          <div class="stage">
+            <div class="canvas-wrap"><canvas id="canvas" width="720" height="1280" aria-label="影片預覽，可拖曳調整小貓位置"></canvas>
+              <div id="selection" aria-hidden="true"><span>三隻小貓</span><i></i></div>
+            </div>
+          </div>
+          <div class="transport"><button id="play" disabled>▶ 播放預覽</button><span id="time">00:00 / 00:12</span><span class="live">即時預覽</span></div>
+          <p class="hint">拖曳小貓移動位置 · 拉動右下角調整大小</p>
+        </section>
+        <aside>
+          <fieldset id="editor">
+            <section class="panel controls">
+              <div class="step">01 <h2>背景圖片</h2>
+              </div><label class="upload" for="background"><b>＋</b><strong>上傳背景圖片</strong><span>JPG、PNG、WebP · 點擊選取</span><input id="background" type="file" accept="image/jpeg,image/png,image/webp"></label>
+              <p id="filename" class="hint">背景配色</p>
+              <div class="swatches"><button data-bg="mint" class="swatch mint active" aria-label="薄荷背景"></button><button data-bg="peach" class="swatch peach" aria-label="蜜桃背景"></button><button data-bg="night" class="swatch night" aria-label="深夜背景"></button><button data-bg="cream" class="swatch cream" aria-label="奶油背景"></button></div>
+              <div class="row"><label for="ratio">畫布比例</label><select id="ratio">
+                  <option value="portrait">9:16 直式</option>
+                  <option value="square">1:1 方形</option>
+                  <option value="landscape">16:9 橫式</option>
+                </select></div>
+              <div class="row"><label for="fit">背景填滿方式</label><select id="fit">
+                  <option value="cover">裁切填滿</option>
+                  <option value="contain">完整顯示</option>
+                </select></div>
+            </section>
+            <section class="panel controls">
+              <div class="step">02 <h2>小貓位置與大小</h2><button id="reset" class="text-button">重設</button></div><label class="slider-label" for="size">整組大小 <output id="sizeValue">85%</output></label><input id="size" type="range" min="20" max="150" value="85"><label class="slider-label" for="posX">水平位置 <output id="xValue">50%</output></label><input id="posX" type="range" min="0" max="100" value="50"><label class="slider-label" for="posY">垂直位置 <output id="yValue">60%</output></label><input id="posY" type="range" min="0" max="100" value="60">
+              <div class="row"><label for="flip">左右鏡像</label><input id="flip" type="checkbox"></div>
+              <details>
+                <summary>去背微調</summary><label class="slider-label" for="key">綠幕去除強度</label><input id="key" type="range" min="20" max="140" value="65">
+                <p class="hint">邊緣有綠色時，降低數值以去除更多綠色。</p>
+              </details>
+            </section>
+            <section class="panel controls">
+              <div class="step">03 <h2>影片輸出</h2>
+              </div>
+              <div class="row"><label for="quality">輸出畫質</label><select id="quality">
+                  <option value="720">標準 · 720p</option>
+                  <option value="1080">高畫質 · 1080p</option>
+                  <option value="480">輕量 · 480p</option>
+                </select></div>
+              <div class="row"><label for="sound">保留原影片音樂</label><input id="sound" type="checkbox" checked></div><button id="export" class="primary" disabled>↓ 產生影片</button>
+              <p class="hint">約 12 秒 · 30 FPS · <span id="format">偵測格式中</span><br>輸出時請保持此頁開啟，勿切換分頁或鎖定螢幕。</p>
+            </section>
+          </fieldset>
+          <div class="status-area">
+            <p id="status" role="status" aria-live="polite">正在載入小貓…</p><progress id="progress" max="1" value="0" hidden></progress><button id="cancel" hidden>取消輸出</button><a id="download" class="primary" hidden>下載影片</a><button id="share" hidden>分享／儲存到裝置</button>
+          </div>
+        </aside>
+      </div>
+    </main><video id="source" src="assets/cats.mp4" preload="auto" playsinline muted hidden></video>
+    <script src="app.js"></script>
+  </body>
+</html>
