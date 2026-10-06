@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f7f6f2">
     <title>漲停小貓產生器</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
   </head>
   <body>
     <header><h1 class="brand">漲停小貓產生器</h1></header>
@@ -41,13 +41,8 @@
             <section class="panel controls">
               <div class="step">03 <h2>影片輸出</h2>
               </div>
-              <div class="row"><label for="quality">輸出畫質</label><select id="quality">
-                  <option value="720">標準 · 720p</option>
-                  <option value="1080">高畫質 · 1080p</option>
-                  <option value="480">輕量 · 480p</option>
-                </select></div>
               <div class="row"><label for="sound">保留原影片音樂</label><input id="sound" type="checkbox" checked></div><button id="export" class="primary" disabled>↓ 產生影片</button>
-              <p class="hint">約 12 秒 · 30 FPS · <span id="format">偵測格式中</span><br>輸出時請保持此頁開啟，勿切換分頁或鎖定螢幕。</p>
+              <p class="hint">背景原始解析度 · 約 12 秒 · 30 FPS · <span id="format">偵測格式中</span><br>輸出時請保持此頁開啟，勿切換分頁或鎖定螢幕。</p>
             </section>
           </fieldset>
           <div class="status-area">
@@ -56,6 +51,6 @@
         </aside>
       </div>
     </main><video id="source" src="assets/cats.mp4" preload="auto" playsinline webkit-playsinline muted loop aria-hidden="true"></video>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
   </body>
 </html>
